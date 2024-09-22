@@ -1,11 +1,15 @@
 #include "InvertedIndex.h"
+#include <iostream>
 
 int main(int argc, char *argv[]) {
+  InvertedIndex indexNew("../data/News.csv");
+  indexNew.createIndex();
 
-  InvertedIndex index;
+  std::cout << "Index created successfully\n";
 
-  std::string filePath = "../data/News.csv";
-  index.ReadCSV(filePath);
+  std::string query;
+  std::cout << "Enter your query: ";
+  std::getline(std::cin, query);
 
-  return 0;
+  indexNew.executeQuery(query);
 }
