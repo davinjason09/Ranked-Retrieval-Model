@@ -2,7 +2,7 @@
 #include <iostream>
 
 int main(int argc, char *argv[]) {
-  InvertedIndex indexNew("../data/News.csv");
+  InvertedIndex indexNew("../../data/News.csv");
   indexNew.createIndex();
 
   std::cout << "Index created successfully\n";

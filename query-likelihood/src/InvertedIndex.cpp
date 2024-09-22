@@ -13,7 +13,12 @@
 InvertedIndex::InvertedIndex(const std::string &filePath)
     : filePath(filePath) {}
 
-InvertedIndex::~InvertedIndex() { dictionary.clear(); }
+InvertedIndex::~InvertedIndex() {
+  dictionary.clear();
+  collectionFrequency.clear();
+  docLength.clear();
+  docTitles.clear();
+}
 
 void InvertedIndex::createIndex() {
   std::ifstream file(filePath);
@@ -56,6 +61,7 @@ void InvertedIndex::createIndex() {
   std::cout << "Index created in " << duration << " ms\n";
 
   totalDocument = docID;
+  calculateCollectionFrequency();
 }
 
 void InvertedIndex::readSegment(const std::string &line, bool forward = true) {
@@ -106,32 +112,24 @@ Document InvertedIndex::getContent(const std::string &line) {
 }
 
 void InvertedIndex::addWord(const std::string &word, int docID) {
-  if (dictionary[word].count(docID) == 0) {
-    dictionary[word][docID] = {1, 0};
-  } else {
-    dictionary[word][docID].first++;
-  }
+  /*if (dictionary[word].count(docID) == 0) {*/
+  /*  dictionary[word][docID] = {1, 0};*/
+  /*} else {*/
+  /*  dictionary[word][docID].first++;*/
+  /*}*/
+
+  dictionary[word][docID]++;
+  collectionFrequency[word]++;
+  docLength[docID]++;
+  totalTerms++;
 }
 
-void InvertedIndex::calculateTF() {
-  for (auto &it : dictionary) {
-    for (auto &node : it.second) {
-      double tf = 1 + log10(static_cast<double>(node.second.first));
-      node.second.second = tf;
-
-      docLength[node.first] += tf * tf;
+void InvertedIndex::calculateCollectionFrequency() {
+  for (const auto &it : dictionary) {
+    collectionFrequency[it.first] = 0;
+    for (const auto &[_, tf] : it.second) {
+      collectionFrequency[it.first] += tf;
     }
-  }
-
-  for (auto [id, length] : docLength) {
-    length = std::sqrt(length);
-  }
-}
-
-void InvertedIndex::calculateIDF() {
-  for (auto &it : dictionary) {
-    double idf = log10(static_cast<double>(totalDocument) / it.second.size());
-    IDF[it.first] = idf;
   }
 }
 
@@ -157,9 +155,6 @@ std::vector<std::string> InvertedIndex::splitQuery(const std::string &query) {
 }
 
 void InvertedIndex::executeQuery(const std::string &query) {
-  calculateTF();
-  calculateIDF();
-
   std::vector<std::string> inputQuery = splitQuery(query);
   std::priority_queue<std::pair<int, double>,
                       std::vector<std::pair<int, double>>, Compare>
@@ -176,30 +171,31 @@ void InvertedIndex::executeQuery(const std::string &query) {
     return;
   }
 
-  double queryLength = 0;
-  std::unordered_map<std::string, double> queryWeights;
-  for (const auto &word : queryWords) {
-    double idf = IDF[word];
-    queryWeights[word] = idf;
-    queryLength += idf * idf;
-  }
-
-  queryLength = std::sqrt(queryLength);
+  const double lambda = 0.5;
 
   for (int i = 0; i < totalDocument; i++) {
-    double dotProduct = 0;
+    double score = 0;
 
     for (const auto &word : queryWords) {
-      if (dictionary[word].count(i) > 0) {
-        auto [freq, tf] = dictionary[word][i];
-        double idf = IDF[word];
-        dotProduct += tf * idf * queryWeights[word];
+      if (dictionary.count(word) > 0) {
+        double termInDoc =
+            dictionary[word].count(i) > 0
+                ? static_cast<double>(dictionary[word][i]) / docLength[i]
+                : 0;
+
+        double termInCollection =
+            static_cast<double>(collectionFrequency[word]) / totalTerms;
+
+        double termLikelihood =
+            lambda * termInDoc + (1 - lambda) * termInCollection;
+
+        score += log(termLikelihood);
       }
     }
 
-    if (dotProduct > 0) {
-      double cosineSimilarity = dotProduct / (docLength[i] * queryLength);
-      results.push({i, cosineSimilarity});
+    /*std::cout << "Score: " << score << " - ID: " << i << '\n';*/
+    if (score != 0) {
+      results.push({i, score});
 
       if (results.size() > 10)
         results.pop();
