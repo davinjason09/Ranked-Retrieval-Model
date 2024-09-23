@@ -1,7 +1,6 @@
 #include "InvertedIndex.h"
 #include <algorithm>
 #include <cctype>
-#include <chrono>
 #include <cmath>
 #include <fstream>
 #include <iostream>
@@ -31,7 +30,6 @@ void InvertedIndex::createIndex() {
   }
 
   std::getline(file, line);
-  auto start = std::chrono::high_resolution_clock::now();
   while (std::getline(file, line)) {
     Document doc = getContent(line);
 
@@ -52,13 +50,6 @@ void InvertedIndex::createIndex() {
 
     docID++;
   }
-
-  auto end = std::chrono::high_resolution_clock::now();
-  double duration =
-      std::chrono::duration_cast<std::chrono::milliseconds>(end - start)
-          .count();
-
-  std::cout << "Index created in " << duration << " ms\n";
 
   totalDocument = docID;
   calculateCollectionFrequency();
