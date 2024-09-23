@@ -1,7 +1,6 @@
 #include "InvertedIndex.h"
 #include <algorithm>
 #include <cctype>
-#include <chrono>
 #include <cmath>
 #include <fstream>
 #include <iostream>
@@ -31,7 +30,6 @@ void InvertedIndex::createIndex() {
   }
 
   std::getline(file, line);
-  auto start = std::chrono::high_resolution_clock::now();
   while (std::getline(file, line)) {
     Document doc = getContent(line);
 
@@ -53,14 +51,8 @@ void InvertedIndex::createIndex() {
     docID++;
   }
 
-  auto end = std::chrono::high_resolution_clock::now();
-  double duration =
-      std::chrono::duration_cast<std::chrono::milliseconds>(end - start)
-          .count();
-
-  std::cout << "Index created in " << duration << " ms\n";
-
   totalDocument = docID;
+  calculateTFIDF();
 }
 
 void InvertedIndex::readSegment(const std::string &line, bool forward = true) {
@@ -118,25 +110,18 @@ void InvertedIndex::addWord(const std::string &word, int docID) {
   }
 }
 
-void InvertedIndex::calculateTF() {
+void InvertedIndex::calculateTFIDF() {
   for (auto &it : dictionary) {
+    double idf = log10(static_cast<double>(totalDocument) / it.second.size());
+    IDF[it.first] = idf;
+
     for (auto &node : it.second) {
       double tf = 1 + log10(static_cast<double>(node.second.first));
       node.second.second = tf;
 
       docLength[node.first] += tf * tf;
+      docLength[node.first] = std::sqrt(docLength[node.first]);
     }
-  }
-
-  for (auto [id, length] : docLength) {
-    length = std::sqrt(length);
-  }
-}
-
-void InvertedIndex::calculateIDF() {
-  for (auto &it : dictionary) {
-    double idf = log10(static_cast<double>(totalDocument) / it.second.size());
-    IDF[it.first] = idf;
   }
 }
 
@@ -162,9 +147,6 @@ std::vector<std::string> InvertedIndex::splitQuery(const std::string &query) {
 }
 
 void InvertedIndex::executeQuery(const std::string &query) {
-  calculateTF();
-  calculateIDF();
-
   std::vector<std::string> inputQuery = splitQuery(query);
   std::priority_queue<std::pair<int, double>,
                       std::vector<std::pair<int, double>>, Compare>

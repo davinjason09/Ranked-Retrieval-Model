@@ -39,8 +39,7 @@ private:
   std::unordered_map<int, double> docLength;
   std::vector<std::string> docTitles;
 
-  void calculateTF();
-  void calculateIDF();
+  void calculateTFIDF();
   void addWord(const std::string &word, int docID);
   void readSegment(const std::string &line, bool forward);
 
