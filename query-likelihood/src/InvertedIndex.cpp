@@ -14,8 +14,8 @@ InvertedIndex::InvertedIndex(const std::string &filePath)
     : filePath(filePath) {}
 
 InvertedIndex::~InvertedIndex() {
-  dictionary.clear();
   collectionFrequency.clear();
+  dictionary.clear();
   docLength.clear();
   docTitles.clear();
 }
@@ -112,12 +112,6 @@ Document InvertedIndex::getContent(const std::string &line) {
 }
 
 void InvertedIndex::addWord(const std::string &word, int docID) {
-  /*if (dictionary[word].count(docID) == 0) {*/
-  /*  dictionary[word][docID] = {1, 0};*/
-  /*} else {*/
-  /*  dictionary[word][docID].first++;*/
-  /*}*/
-
   dictionary[word][docID]++;
   collectionFrequency[word]++;
   docLength[docID]++;
@@ -154,7 +148,7 @@ std::vector<std::string> InvertedIndex::splitQuery(const std::string &query) {
   return result;
 }
 
-void InvertedIndex::executeQuery(const std::string &query) {
+void InvertedIndex::executeQuery(const std::string &query, double alpha) {
   std::vector<std::string> inputQuery = splitQuery(query);
   std::priority_queue<std::pair<int, double>,
                       std::vector<std::pair<int, double>>, Compare>
@@ -171,8 +165,6 @@ void InvertedIndex::executeQuery(const std::string &query) {
     return;
   }
 
-  const double lambda = 0.5;
-
   for (int i = 0; i < totalDocument; i++) {
     double score = 0;
 
@@ -187,13 +179,12 @@ void InvertedIndex::executeQuery(const std::string &query) {
             static_cast<double>(collectionFrequency[word]) / totalTerms;
 
         double termLikelihood =
-            lambda * termInDoc + (1 - lambda) * termInCollection;
+            alpha * termInDoc + (1 - alpha) * termInCollection;
 
-        score += log(termLikelihood);
+        score += log10(termLikelihood);
       }
     }
 
-    /*std::cout << "Score: " << score << " - ID: " << i << '\n';*/
     if (score != 0) {
       results.push({i, score});
 
@@ -210,8 +201,9 @@ void InvertedIndex::executeQuery(const std::string &query) {
 
   std::reverse(output.begin(), output.end());
 
-  for (const auto &[docID, similarity] : output) {
-    std::cout << "ID: " << docID << " - " << docTitles[docID] << " - "
-              << similarity << '\n';
-  }
+  for (const auto &[docID, similarity] : output)
+    std::cout << "ID: " << docID << " - " << docTitles[docID] << " - ["
+              << similarity << "]\n";
+
+  std::cout << "Done\n";
 }

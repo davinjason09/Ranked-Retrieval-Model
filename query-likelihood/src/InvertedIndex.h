@@ -24,7 +24,7 @@ public:
   ~InvertedIndex();
 
   void createIndex();
-  void executeQuery(const std::string &query);
+  void executeQuery(const std::string &query, double alpha = 0.5);
 
 private:
   std::string filePath;
@@ -35,7 +35,6 @@ private:
 
   std::unordered_map<std::string, std::unordered_map<int, int>> dictionary;
   std::unordered_map<std::string, int> collectionFrequency;
-  std::unordered_map<std::string, double> IDF;
   std::unordered_map<int, double> docLength;
   std::vector<std::string> docTitles;
 
