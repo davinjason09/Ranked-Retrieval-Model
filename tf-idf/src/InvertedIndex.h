@@ -23,26 +23,27 @@ public:
   InvertedIndex(const std::string &filePath);
   ~InvertedIndex();
 
-  int totalDocument = 0;
-  size_t index;
-  std::string current;
-
   void createIndex();
-  void addWord(const std::string &word, int docID);
-  void calculateTF();
-  void calculateIDF();
   void executeQuery(const std::string &query);
-  void readSegment(const std::string &line, bool forward);
-
-  Document getContent(const std::string &line);
-  std::vector<std::string> splitQuery(const std::string &query);
 
 private:
   std::string filePath;
+  std::string current;
+  int totalDocument = 0;
+  size_t index = 0;
+
   std::unordered_map<std::string,
                      std::unordered_map<int, std::pair<int, double>>>
       dictionary;
   std::unordered_map<std::string, double> IDF;
+  std::unordered_map<int, double> docLength;
   std::vector<std::string> docTitles;
-  std::unordered_map<int, int> docLength;
+
+  void calculateTF();
+  void calculateIDF();
+  void addWord(const std::string &word, int docID);
+  void readSegment(const std::string &line, bool forward);
+
+  Document getContent(const std::string &line);
+  std::vector<std::string> splitQuery(const std::string &query);
 };

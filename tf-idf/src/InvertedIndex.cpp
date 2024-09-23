@@ -13,7 +13,12 @@
 InvertedIndex::InvertedIndex(const std::string &filePath)
     : filePath(filePath) {}
 
-InvertedIndex::~InvertedIndex() { dictionary.clear(); }
+InvertedIndex::~InvertedIndex() {
+  dictionary.clear();
+  docLength.clear();
+  docTitles.clear();
+  IDF.clear();
+}
 
 void InvertedIndex::createIndex() {
   std::ifstream file(filePath);
@@ -214,8 +219,9 @@ void InvertedIndex::executeQuery(const std::string &query) {
 
   std::reverse(output.begin(), output.end());
 
-  for (const auto &[docID, similarity] : output) {
-    std::cout << "ID: " << docID << " - " << docTitles[docID] << " - "
-              << similarity << '\n';
-  }
+  for (const auto &[docID, similarity] : output)
+    std::cout << "ID: " << docID << " - " << docTitles[docID] << " - ["
+              << similarity << "]\n";
+
+  std::cout << "Done\n";
 }
