@@ -21,6 +21,7 @@ int main(int argc, char *argv[]) {
   InvertedIndex index("../../data/News.csv");
 
   std::thread indexThread(buildIndex, &index);
+  std::cout << "Query Likelihood Model\n";
 
   std::string query;
   std::cout << "Enter your query: ";
