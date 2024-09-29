@@ -1,3 +1,7 @@
 # Executable files
 *.exe
 *.out
+
+# Output files
+*.txt
+*.csv
