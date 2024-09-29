@@ -4,13 +4,6 @@
 #include <unordered_map>
 #include <vector>
 
-struct Compare {
-  bool operator()(const std::pair<int, double> &a,
-                  const std::pair<int, double> &b) {
-    return a.second > b.second;
-  }
-};
-
 struct Document {
   int docID;
   std::string content;

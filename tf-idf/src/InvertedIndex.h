@@ -4,13 +4,6 @@
 #include <unordered_map>
 #include <vector>
 
-struct Compare {
-  bool operator()(const std::pair<int, double> &a,
-                  const std::pair<int, double> &b) {
-    return a.second > b.second;
-  }
-};
-
 struct Document {
   int docID;
   std::string content;
@@ -36,7 +29,7 @@ private:
                      std::unordered_map<int, std::pair<int, double>>>
       dictionary;
   std::unordered_map<std::string, double> IDF;
-  std::unordered_map<int, double> docLength;
+  std::unordered_map<int, int> docLength;
   std::vector<std::string> docTitles;
 
   void calculateTFIDF();
