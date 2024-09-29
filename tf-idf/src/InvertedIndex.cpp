@@ -4,7 +4,6 @@
 #include <cmath>
 #include <fstream>
 #include <iostream>
-#include <queue>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -42,11 +41,14 @@ void InvertedIndex::createIndex() {
           addWord(word, doc.docID);
 
         word = "";
+        docLength[doc.docID]++;
       }
     }
 
-    if (!word.empty())
+    if (!word.empty()) {
       addWord(word, doc.docID);
+      docLength[doc.docID]++;
+    }
 
     docID++;
   }
@@ -116,11 +118,13 @@ void InvertedIndex::calculateTFIDF() {
     IDF[it.first] = idf;
 
     for (auto &node : it.second) {
-      double tf = 1 + log10(static_cast<double>(node.second.first));
-      node.second.second = tf;
+      double tf =
+          static_cast<double>(node.second.first) / docLength[node.first];
 
-      docLength[node.first] += tf * tf;
-      docLength[node.first] = std::sqrt(docLength[node.first]);
+      if (tf > 0)
+        node.second.second = tf * idf;
+      else
+        node.second.second = 0;
     }
   }
 }
@@ -148,14 +152,12 @@ std::vector<std::string> InvertedIndex::splitQuery(const std::string &query) {
 
 void InvertedIndex::executeQuery(const std::string &query) {
   std::vector<std::string> inputQuery = splitQuery(query);
-  std::priority_queue<std::pair<int, double>,
-                      std::vector<std::pair<int, double>>, Compare>
-      results;
-  std::vector<std::string> queryWords;
+  std::unordered_map<std::string, int> queryWords;
+  std::vector<std::pair<int, double>> results;
 
   for (auto &word : inputQuery) {
     if (dictionary.count(word) > 0)
-      queryWords.push_back(word);
+      queryWords[word]++;
   }
 
   if (queryWords.empty()) {
@@ -165,45 +167,46 @@ void InvertedIndex::executeQuery(const std::string &query) {
 
   double queryLength = 0;
   std::unordered_map<std::string, double> queryWeights;
-  for (const auto &word : queryWords) {
+  for (const auto &[word, freq] : queryWords) {
     double idf = IDF[word];
-    queryWeights[word] = idf;
-    queryLength += idf * idf;
+    double tfidf = (static_cast<double>(freq) / inputQuery.size()) * idf;
+    queryWeights[word] = tfidf;
+    queryLength += tfidf * tfidf;
   }
 
   queryLength = std::sqrt(queryLength);
 
   for (int i = 0; i < totalDocument; i++) {
     double dotProduct = 0;
+    double docWeight = 0;
 
-    for (const auto &word : queryWords) {
+    for (const auto &[word, _] : queryWords) {
       if (dictionary[word].count(i) > 0) {
-        auto [freq, tf] = dictionary[word][i];
-        double idf = IDF[word];
-        dotProduct += tf * idf * queryWeights[word];
+        auto [freq, tfidf] = dictionary[word][i];
+        dotProduct += tfidf * queryWeights[word];
+        docWeight += tfidf * tfidf;
       }
     }
 
     if (dotProduct > 0) {
-      double cosineSimilarity = dotProduct / (docLength[i] * queryLength);
-      results.push({i, cosineSimilarity});
+      docWeight = std::sqrt(docWeight);
+      double cosineSimilarity = dotProduct / (docWeight * queryLength);
 
-      if (results.size() > 10)
-        results.pop();
+      results.push_back({i, cosineSimilarity});
     }
   }
 
-  std::vector<std::pair<int, double>> output;
-  while (!results.empty()) {
-    output.push_back(results.top());
-    results.pop();
-  }
+  std::sort(results.begin(), results.end(), [](const auto &a, const auto &b) {
+    if (a.second == b.second)
+      return a.first < b.first;
 
-  std::reverse(output.begin(), output.end());
+    return a.second > b.second;
+  });
 
-  for (const auto &[docID, similarity] : output)
-    std::cout << "ID: " << docID << " - " << docTitles[docID] << " - ["
-              << similarity << "]\n";
+  for (int i = 0; i < std::min(10, static_cast<int>(results.size())); i++)
+    std::cout << "ID: " << results[i].first << " - "
+              << docTitles[results[i].first] << " - [" << results[i].second
+              << "]\n";
 
   std::cout << "Done\n";
 }
