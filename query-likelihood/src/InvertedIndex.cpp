@@ -4,7 +4,6 @@
 #include <cmath>
 #include <fstream>
 #include <iostream>
-#include <queue>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -141,14 +140,12 @@ std::vector<std::string> InvertedIndex::splitQuery(const std::string &query) {
 
 void InvertedIndex::executeQuery(const std::string &query, double alpha) {
   std::vector<std::string> inputQuery = splitQuery(query);
-  std::priority_queue<std::pair<int, double>,
-                      std::vector<std::pair<int, double>>, Compare>
-      results;
-  std::vector<std::string> queryWords;
+  std::vector<std::pair<int, double>> results;
+  std::unordered_map<std::string, int> queryWords;
 
   for (auto &word : inputQuery) {
     if (dictionary.count(word) > 0)
-      queryWords.push_back(word);
+      queryWords[word]++;
   }
 
   if (queryWords.empty()) {
@@ -159,7 +156,7 @@ void InvertedIndex::executeQuery(const std::string &query, double alpha) {
   for (int i = 0; i < totalDocument; i++) {
     double score = 0;
 
-    for (const auto &word : queryWords) {
+    for (const auto &[word, _] : queryWords) {
       if (dictionary.count(word) > 0) {
         double termInDoc =
             dictionary[word].count(i) > 0
@@ -172,29 +169,25 @@ void InvertedIndex::executeQuery(const std::string &query, double alpha) {
         double termLikelihood =
             alpha * termInDoc + (1 - alpha) * termInCollection;
 
-        score += log10(termLikelihood);
+        if (termLikelihood > 0)
+          score += log10(termLikelihood);
       }
     }
 
-    if (score != 0) {
-      results.push({i, score});
-
-      if (results.size() > 10)
-        results.pop();
-    }
+    if (score != 0)
+      results.push_back({i, score});
   }
 
-  std::vector<std::pair<int, double>> output;
-  while (!results.empty()) {
-    output.push_back(results.top());
-    results.pop();
-  }
+  std::sort(results.begin(), results.end(), [](const auto &a, const auto &b) {
+    if (a.second == b.second)
+      return a.first < b.first;
+    return a.second > b.second;
+  });
 
-  std::reverse(output.begin(), output.end());
-
-  for (const auto &[docID, similarity] : output)
-    std::cout << "ID: " << docID << " - " << docTitles[docID] << " - ["
-              << similarity << "]\n";
+  for (int i = 0; i < std::min(10, static_cast<int>(results.size())); i++)
+    std::cout << "ID: " << results[i].first << " - "
+              << docTitles[results[i].first] << " - [" << results[i].second
+              << "]\n";
 
   std::cout << "Done\n";
 }
