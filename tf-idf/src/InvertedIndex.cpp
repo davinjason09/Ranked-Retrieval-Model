@@ -13,7 +13,6 @@ InvertedIndex::InvertedIndex(const std::string &filePath)
 
 InvertedIndex::~InvertedIndex() {
   dictionary.clear();
-  docLength.clear();
   docTitles.clear();
   IDF.clear();
 }
@@ -41,14 +40,11 @@ void InvertedIndex::createIndex() {
           addWord(word, doc.docID);
 
         word = "";
-        docLength[doc.docID]++;
       }
     }
 
-    if (!word.empty()) {
+    if (!word.empty())
       addWord(word, doc.docID);
-      docLength[doc.docID]++;
-    }
 
     docID++;
   }
@@ -104,7 +100,7 @@ Document InvertedIndex::getContent(const std::string &line) {
   return Document(id, content);
 }
 
-void InvertedIndex::addWord(const std::string &word, int docID) {
+void InvertedIndex::addWord(const std::string &word, int16_t docID) {
   if (dictionary[word].count(docID) == 0) {
     dictionary[word][docID] = {1, 0};
   } else {
@@ -113,18 +109,13 @@ void InvertedIndex::addWord(const std::string &word, int docID) {
 }
 
 void InvertedIndex::calculateTFIDF() {
-  for (auto &it : dictionary) {
-    double idf = log10(static_cast<double>(totalDocument) / it.second.size());
-    IDF[it.first] = idf;
+  for (auto &[word, docs] : dictionary) {
+    double idf = log10(static_cast<double>(totalDocument) / docs.size());
+    IDF[word] = idf;
 
-    for (auto &node : it.second) {
-      double tf =
-          static_cast<double>(node.second.first) / docLength[node.first];
-
-      if (tf > 0)
-        node.second.second = tf * idf;
-      else
-        node.second.second = 0;
+    for (auto &[_, details] : docs) {
+      int16_t freq = details.first;
+      details.second = (freq > 0) ? (1 + log10(freq)) * idf : 0;
     }
   }
 }
@@ -154,6 +145,7 @@ void InvertedIndex::executeQuery(const std::string &query) {
   std::vector<std::string> inputQuery = splitQuery(query);
   std::unordered_map<std::string, int> queryWords;
   std::vector<std::pair<int, double>> results;
+  results.reserve(totalDocument);
 
   for (auto &word : inputQuery) {
     if (dictionary.count(word) > 0)
@@ -169,7 +161,7 @@ void InvertedIndex::executeQuery(const std::string &query) {
   std::unordered_map<std::string, double> queryWeights;
   for (const auto &[word, freq] : queryWords) {
     double idf = IDF[word];
-    double tfidf = (static_cast<double>(freq) / inputQuery.size()) * idf;
+    double tfidf = (1 + log10(freq)) * idf;
     queryWeights[word] = tfidf;
     queryLength += tfidf * tfidf;
   }
