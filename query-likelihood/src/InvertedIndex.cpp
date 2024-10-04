@@ -101,7 +101,7 @@ Document InvertedIndex::getContent(const std::string &line) {
   return Document(id, content);
 }
 
-void InvertedIndex::addWord(const std::string &word, int docID) {
+void InvertedIndex::addWord(const std::string &word, int16_t docID) {
   dictionary[word][docID]++;
   collectionFrequency[word]++;
   docLength[docID]++;
@@ -140,8 +140,9 @@ std::vector<std::string> InvertedIndex::splitQuery(const std::string &query) {
 
 void InvertedIndex::executeQuery(const std::string &query, double alpha) {
   std::vector<std::string> inputQuery = splitQuery(query);
-  std::vector<std::pair<int, double>> results;
-  std::unordered_map<std::string, int> queryWords;
+  std::vector<std::pair<int16_t, double>> results;
+  std::unordered_map<std::string, int16_t> queryWords;
+  results.reserve(totalDocument);
 
   for (auto &word : inputQuery) {
     if (dictionary.count(word) > 0)
@@ -153,7 +154,7 @@ void InvertedIndex::executeQuery(const std::string &query, double alpha) {
     return;
   }
 
-  for (int i = 0; i < totalDocument; i++) {
+  for (int16_t i = 0; i < totalDocument; i++) {
     double score = 0;
 
     for (const auto &[word, _] : queryWords) {

@@ -1,11 +1,12 @@
 #pragma once
 
+#include <cstdint>
 #include <string>
 #include <unordered_map>
 #include <vector>
 
 struct Document {
-  int docID;
+  int16_t docID;
   std::string content;
 
   Document(int docID, std::string content) : docID(docID), content(content) {}
@@ -22,17 +23,18 @@ public:
 private:
   std::string filePath;
   std::string current;
-  int totalDocument = 0;
-  int totalTerms = 0;
+  int16_t totalDocument = 0;
+  int16_t totalTerms = 0;
   size_t index = 0;
 
-  std::unordered_map<std::string, std::unordered_map<int, int>> dictionary;
-  std::unordered_map<std::string, int> collectionFrequency;
+  std::unordered_map<std::string, std::unordered_map<int16_t, int16_t>>
+      dictionary;
+  std::unordered_map<std::string, int16_t> collectionFrequency;
   std::unordered_map<int, double> docLength;
   std::vector<std::string> docTitles;
 
   void calculateCollectionFrequency();
-  void addWord(const std::string &word, int docID);
+  void addWord(const std::string &word, int16_t docID);
   void readSegment(const std::string &line, bool forward);
 
   Document getContent(const std::string &line);
