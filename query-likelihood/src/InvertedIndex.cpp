@@ -95,9 +95,9 @@ Document InvertedIndex::getContent(const std::string &line) {
   std::reverse(content.begin(), content.end());
 
   if (id != docTitles.size())
-    docTitles.push_back("---");
+    docTitles.emplace_back("---");
 
-  docTitles.push_back(title);
+  docTitles.emplace_back(title);
   return Document(id, content);
 }
 
@@ -109,10 +109,10 @@ void InvertedIndex::addWord(const std::string &word, int16_t docID) {
 }
 
 void InvertedIndex::calculateCollectionFrequency() {
-  for (const auto &it : dictionary) {
-    collectionFrequency[it.first] = 0;
-    for (const auto &[_, tf] : it.second) {
-      collectionFrequency[it.first] += tf;
+  for (const auto &[word, details] : dictionary) {
+    collectionFrequency[word] = 0;
+    for (const auto &[_, freq] : details) {
+      collectionFrequency[word] += freq;
     }
   }
 }
@@ -126,14 +126,14 @@ std::vector<std::string> InvertedIndex::splitQuery(const std::string &query) {
       word += tolower(c);
     } else {
       if (!word.empty())
-        result.push_back(word);
+        result.emplace_back(word);
 
       word = "";
     }
   }
 
   if (!word.empty())
-    result.push_back(word);
+    result.emplace_back(word);
 
   return result;
 }
@@ -176,7 +176,7 @@ void InvertedIndex::executeQuery(const std::string &query, double alpha) {
     }
 
     if (score != 0)
-      results.push_back({i, score});
+      results.emplace_back(i, score);
   }
 
   std::sort(results.begin(), results.end(), [](const auto &a, const auto &b) {
