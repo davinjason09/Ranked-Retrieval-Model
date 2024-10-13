@@ -24,13 +24,13 @@ private:
   std::string filePath;
   std::string current;
   int16_t totalDocument = 0;
-  int16_t totalTerms = 0;
+  int totalTerms = 0;
   size_t index = 0;
 
   std::unordered_map<std::string, std::unordered_map<int16_t, int16_t>>
       dictionary;
   std::unordered_map<std::string, int16_t> collectionFrequency;
-  std::unordered_map<int, double> docLength;
+  std::unordered_map<int16_t, int> docLength;
   std::vector<std::string> docTitles;
 
   void calculateCollectionFrequency();
